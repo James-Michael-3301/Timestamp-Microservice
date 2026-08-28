@@ -1,42 +1,57 @@
 const express = require("express");
+const cors = require("cors");
+
 const app = express();
 
 const port = process.env.PORT || 3000;
 
-// Serve the files in the public folder
-app.use(express.static("public"));
+// Enable CORS so freeCodeCamp can test the API
+app.use(cors({ optionsSuccessStatus: 200 }));
+
+// Serve static files
+app.use("/public", express.static(__dirname + "/public"));
+
+// Homepage
+app.get("/", function(req, res) {
+  res.sendFile(__dirname + "/views/index.html");
+});
 
 // Timestamp API
-app.get("/api/:date?", (req, res) => {
+app.get("/api/:date?", function(req, res) {
   let date;
 
-  // If no date is provided, use the current time
+  // No date provided
   if (!req.params.date) {
     date = new Date();
-  } else {
-    // Check if the parameter is a Unix timestamp
-    if (/^\d+$/.test(req.params.date)) {
-      date = new Date(Number(req.params.date));
-    } else {
-      date = new Date(req.params.date);
-    }
   }
 
-  // Check for invalid dates
+  // Unix timestamp
+  else if (/^\d+$/.test(req.params.date)) {
+    date = new Date(Number(req.params.date));
+  }
+
+  // Normal date string
+  else {
+    date = new Date(req.params.date);
+  }
+
+  // Invalid date
   if (isNaN(date.getTime())) {
     return res.json({
       error: "Invalid Date"
     });
   }
 
-  // Return Unix timestamp and UTC date
-  res.json({
+  // Valid date
+  return res.json({
     unix: date.getTime(),
     utc: date.toUTCString()
   });
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+const listener = app.listen(port, function() {
+  console.log("Your app is listening on port " + listener.address().port);
 });
+
+module.exports = app;
